@@ -1,0 +1,12 @@
+# Package: regexp   Test: regexp_replace
+#
+# 
+
+-- disable_query_log
+-- disable_metadata
+
+-- source create_functions.inc
+
+SELECT REGEXP_REPLACE("lala foo lala", "foo", "bar") AS r1;
+
+-- source drop_functions.inc

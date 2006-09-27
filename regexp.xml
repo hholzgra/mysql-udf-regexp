@@ -1,0 +1,595 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE udf SYSTEM "udf_extension.dtd">
+<extension name="regexp" version="0.9.5dev">
+
+  <maintainer>
+    <name>Hartmut Holzgraefe</name>
+    <email>hartmut@mysql.com</email>
+  </maintainer>
+
+  <license>GPL</license>
+
+  <release>
+    <version>0.1</version>
+    <date>2004-05-25</date>
+    <state>beta</state>
+    <notes>
+     First working release
+    </notes>
+  </release>
+
+  <deps>
+   <src/>
+  </deps>
+
+
+  <function name="regexp_like" returns="int" null="yes">
+    <param name="text"    type="string"/>
+    <param name="pattern" type="string"/>
+    <param name="mode"    type="string" optional="yes"/>
+
+    <data>
+     <element name="expr"    type="my_regex_t"/>
+     <element name="dynamic" type="int" />
+    </data>               
+
+    <init>
+<?data
+    if (pattern) {
+        // static regex pattern -> we can compile it once and reuse it 
+        int stat;
+        char *copy;
+
+        // we have to make sure we have a NUL terminated C string
+        // as argument for my_regcomp           
+        copy = strndup(pattern, pattern_len);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        free(copy);
+
+        if (stat) {
+            sprintf(message, "regcomp failed (error: %d)", stat);
+            return 1; 
+        }
+
+        data->dynamic = 0;
+    } else {
+        data->dynamic = 1;
+    }
+?>
+    </init>
+
+    <deinit>
+<?data
+    if (!data->dynamic) {
+        // free static compiler pattern
+        my_regfree(&data->expr);
+    }
+?>
+    </deinit>
+
+    <code>
+<?data
+    my_regmatch_t match;
+    int stat;
+    char *copy;
+    
+    if (data->dynamic) {
+        copy = strndup(pattern, pattern_len);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        free(copy);
+        if (stat) {
+            // TODO: need ERROR() and WARNING() macro
+            RETURN_NULL;
+        }
+    }
+
+    copy = strndup(text, text_len);
+    stat = my_regexec(&data->expr, copy, 1, &match, 0);
+    free(copy);
+
+    if (data->dynamic) {
+        my_regfree(&data->expr);
+    }
+
+    if (stat && (stat != REG_NOMATCH)) {
+        fprintf(stderr, "regexec error %d '%s' '%s'\n", stat, pattern, text);
+        RETURN_NULL;
+    }
+
+    RETURN_INT(stat == REG_NOMATCH ? 0 : 1);
+
+?>
+    </code>
+	
+	<test>
+	  <code>
+# testing simple cases
+SELECT REGEXP_LIKE("xxxabcxxx", ".*abc.*") AS r1;
+SELECT REGEXP_LIKE("xxxabdxxx", ".*abc.*") AS r2;
+      </code>
+      <result>
+r1
+1
+r2
+0
+      </result>
+
+      <code>
+# testing case sensitivity
+SELECT REGEXP_LIKE("xxxABCxxx", ".*abc.*") AS r3;
+SELECT REGEXP_LIKE("xxxABCxxx", ".*abc.*", "i") AS r4;
+      </code>
+      <result>
+r3
+0
+r4
+1
+      </result>
+
+      <code>
+# testing POSIX character classes
+SELECT REGEXP_LIKE("abcdef",       "^[[:alpha:]]+$") AS r1;
+SELECT REGEXP_LIKE("123456",       "^[[:alpha:]]+$") AS r2;
+SELECT REGEXP_LIKE("123abcdef",    "^[[:xdigit:]]+$") AS r3;
+      </code>
+      <result>
+r1
+1
+r2
+0
+r3
+1
+      </result>
+
+	</test>
+
+  </function>
+
+
+  <function name="regexp_substr" returns="string" null="yes">
+    <param name="text"    type="string"/>
+    <param name="pattern" type="string"/>
+
+    <data>
+     <element name="expr"    type="my_regex_t"/>
+     <element name="dynamic" type="int" />
+    </data>               
+
+    <init>
+<?data
+    if (pattern) {
+        // static regex pattern -> we can compile it once and reuse it 
+        int stat;
+        char *copy;
+
+        // we have to make sure we have a NUL terminated C string
+        // as argument for my_regcomp           
+        copy = strndup(pattern, pattern_len);
+        stat  = my_regcomp(&data->expr, copy, REG_EXTENDED, &my_charset_latin1);
+        free(copy);
+
+        if (stat) {
+            sprintf(message, "regcomp failed (error: %d)", stat);
+            return 1; 
+        }
+
+        data->dynamic = 0;
+    } else {
+        data->dynamic = 1;
+    }
+?>
+    </init>
+
+    <deinit>
+<?data
+    if (!data->dynamic) {
+        // free static compiler pattern
+        my_regfree(&data->expr);
+    }
+?>
+    </deinit>
+
+    <code>
+<?data
+    my_regmatch_t match;
+    int stat;
+    char *copy;
+    
+    if (data->dynamic) {
+        copy = strndup(pattern, pattern_len);
+        stat  = my_regcomp(&data->expr, copy, REG_EXTENDED, &my_charset_latin1);
+        free(copy);
+        if (stat) {
+            // TODO: need ERROR() and WARNING() macro
+            RETURN_NULL;
+        }
+    }
+
+    copy = strndup(text, text_len);
+    stat = my_regexec(&data->expr, copy, 1, &match, 0);
+    free(copy);
+
+    if (data->dynamic) {
+        my_regfree(&data->expr);
+    }
+
+    if (stat) {
+		if (stat != REG_NOMATCH) {
+        	fprintf(stderr, "regexec error %d '%s' '%s'\n", stat, pattern, text);
+		}
+        RETURN_NULL;
+    }
+
+    RETURN_STRINGL(text + match.rm_so, match.rm_eo - match.rm_so);
+
+?>
+    </code>
+    <test>
+      <code>
+SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+") AS r1;
+      </code>
+      <result>
+r1
+123
+      </result>
+    </test>
+  </function>
+
+
+  <function name="regexp_instr" returns="int" null="yes">
+    <param name="text"       type="string"/>
+    <param name="pattern"    type="string"/>
+    <param name="position"   type="int"    optional="yes" default="1"/>
+    <param name="occurrence" type="int"    optional="yes" default="1"/>
+    <param name="return_end" type="int"    optional="yes" default="0"/>
+    <param name="mode"       type="string" optional="yes" default="c"/>
+    
+
+    <data>
+     <element name="expr"    type="my_regex_t"/>
+     <element name="dynamic" type="int" />
+    </data>               
+
+    <init>
+<?data
+    if (pattern) {
+        // static regex pattern -> we can compile it once and reuse it 
+        int stat;
+        char *copy;
+
+        // we have to make sure we have a NUL terminated C string
+        // as argument for my_regcomp           
+        copy = strndup(pattern, pattern_len);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        free(copy);
+
+        if (stat) {
+            sprintf(message, "regcomp failed (error: %d)", stat);
+            return 1; 
+        }
+
+        data->dynamic = 0;
+    } else {
+        data->dynamic = 1;
+    }
+?>
+    </init>
+
+    <deinit>
+<?data
+    if (!data->dynamic) {
+        // free static compiler pattern
+        my_regfree(&data->expr);
+    }
+?>
+    </deinit>
+
+    <code>
+<?data
+    my_regmatch_t match;
+    int stat;
+    char *copy;
+
+	if (position) {
+	  position -= 1; /* oracle offsets start at 1, not 0 */
+	}
+ 
+    if (data->dynamic) {
+        copy = strndup(pattern, pattern_len);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        free(copy);
+        if (stat) {
+            // TODO: need ERROR() and WARNING() macro
+            RETURN_NULL;
+        }
+    }
+
+    copy = strndup(text, text_len);
+    match.rm_eo = 0;
+	do {
+		position += match.rm_eo;
+	    stat = my_regexec(&data->expr, copy + (size_t)position, 1, &match, 0);
+	} while ((stat == 0) && --occurrence > 0);
+
+    free(copy);
+
+    if (data->dynamic) {
+        my_regfree(&data->expr);
+    }
+
+    if (stat) {
+        fprintf(stderr, "regexec error %d '%s' '%s'\n", stat, pattern, text);
+        RETURN_NULL;
+    }
+
+    RETURN_INT(position + (return_end ? match.rm_eo : match.rm_so + 1));
+?>
+    </code>
+    <test>
+      <code>
+SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox") AS r1;
+      </code>
+      <result>
+r1
+17
+      </result>
+      <code>
+SELECT REGEXP_INSTR("lala abc lala abc lala", "abc")    AS r1;
+SELECT REGEXP_INSTR("lala abc lala abc lala", "abc", 6) AS r2;
+SELECT REGEXP_INSTR("lala abc lala abc lala", "abc", 7) AS r3;
+      </code>
+      <result>
+r1
+6
+r2
+6
+r3
+15
+      </result>
+      <code>
+SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 1) AS r1;
+SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 2) AS r2;
+SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 3) AS r3;
+SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 4) AS r4;
+      </code>
+      <result>
+r1
+6
+r2
+15
+r3
+24
+r4
+NULL
+      </result>
+      <code>
+# get character position of match start
+SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox", 1, 1, 0) AS r1;
+# get character position of match end
+SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox", 1, 1, 1) AS r2;
+# get character position of match end, use defauts for unused parameters
+SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox", NULL, NULL, 1) AS r3;
+      </code>
+      <result>
+r1
+17
+r2
+19
+r3
+19
+      </result>
+    </test>
+  </function>
+
+
+  <function name="regexp_replace" returns="string" null="yes">
+    <param name="text"    type="string"/>
+    <param name="pattern" type="string"/>
+    <param name="replace" type="string"/>
+
+    <code>
+      char *c_pattern, *c_replace, *c_text;
+      char *result;
+
+      c_pattern = strndup(pattern, pattern_len);
+      c_replace = strndup(replace, replace_len);
+      c_text    = strndup(text,    text_len);
+
+      result = my_regex_replace(c_pattern, c_replace, c_text);
+
+      free(c_pattern);
+      free(c_replace);
+      free(c_text);
+
+      if (result) {
+        RETURN_STRING(result);
+      } else {
+        RETURN_NULL;
+      }
+    </code>
+    <test>
+     <code>
+SELECT REGEXP_REPLACE("lala foo lala", "foo", "bar") AS r1;
+     </code>
+     <result>
+r1
+lala bar lala
+     </result>
+    </test>
+  </function>
+
+  <code role="header" position="top">
+<![CDATA[
+
+#if 0
+#if MYSQL_VERSION_ID < 50000
+#error need MySQL >= 5.0
+#endif
+#endif
+
+#include <sys/types.h>
+
+// TODO: my_regex.h is not installed by "make install"
+#include <regex/my_regex.h>
+
+// helper function borrowed from PHP, slightly modified
+static char *my_regex_replace(const char *pattern, const char *replace, const char *string)
+{
+    my_regex_t re;
+    my_regmatch_t *subs;
+
+    char *buf,  /* buf is where we build the replaced string */
+         *nbuf, /* nbuf is used when we grow the buffer */
+         *walkbuf; /* used to walk buf when replacing backrefs */
+    const char *walk; /* used to walk replacement string for backrefs */
+    int buf_len;
+    int pos, tmp, string_len, new_l;
+    int err, copts = REG_EXTENDED;
+
+    string_len = strlen(string);
+
+    err = my_regcomp(&re, pattern, copts, &my_charset_latin1);
+    if (err) {
+        return NULL;
+    }
+
+    /* allocate storage for (sub-)expression-matches */
+    subs = (my_regmatch_t *)calloc(sizeof(my_regmatch_t),re.re_nsub+1);
+
+    /* start with a buffer that is twice the size of the stringo
+       we're doing replacements in */
+    buf_len = 2 * string_len + 1;
+    buf = calloc(buf_len, sizeof(char));
+
+    err = pos = 0;
+    buf[0] = '\0';
+    while (!err) {
+        err = my_regexec(&re, &string[pos], re.re_nsub+1, subs, (pos ? REG_NOTBOL : 0));
+
+        if (err && err != REG_NOMATCH) {
+            free(subs);
+            free(buf);
+            my_regfree(&re);
+            return NULL;
+        }
+
+        if (!err) {
+            /* backref replacement is done in two passes:
+               1) find out how long the string will be, and allocate buf
+               2) copy the part before match, replacement and backrefs to buf
+
+               Jaakko Hyvätti <Jaakko.Hyvatti@iki.fi>
+               */
+
+            new_l = strlen(buf) + subs[0].rm_so; /* part before the match */
+            walk = replace;
+            while (*walk) {
+                if ('\\' == *walk && isdigit((unsigned char)walk[1]) && ((unsigned char)walk[1]) - '0' <= re.re_nsub) {
+                    if (subs[walk[1] - '0'].rm_so > -1 && subs[walk[1] - '0'].rm_eo > -1) {
+                        new_l += subs[walk[1] - '0'].rm_eo - subs[walk[1] - '0'].rm_so;
+                    }    
+                    walk += 2;
+                } else {
+                    new_l++;
+                    walk++;
+                }
+            }
+            if (new_l + 1 > buf_len) {
+                buf_len = 1 + buf_len + 2 * new_l;
+                nbuf = malloc(buf_len);
+                strcpy(nbuf, buf);
+                free(buf);
+                buf = nbuf;
+            }
+            tmp = strlen(buf);
+            /* copy the part of the string before the match */
+            strncat(buf, &string[pos], subs[0].rm_so);
+
+            /* copy replacement and backrefs */
+            walkbuf = &buf[tmp + subs[0].rm_so];
+            walk = replace;
+            while (*walk) {
+                if ('\\' == *walk && isdigit(walk[1]) && walk[1] - '0' <= (int)re.re_nsub) {
+                    if (subs[walk[1] - '0'].rm_so > -1 && subs[walk[1] - '0'].rm_eo > -1
+                        /* this next case shouldn't happen. it does. */
+                        && subs[walk[1] - '0'].rm_so <= subs[walk[1] - '0'].rm_eo) {
+                        
+                        tmp = subs[walk[1] - '0'].rm_eo - subs[walk[1] - '0'].rm_so;
+                        memcpy (walkbuf, &string[pos + subs[walk[1] - '0'].rm_so], tmp);
+                        walkbuf += tmp;
+                    }
+                    walk += 2;
+                } else {
+                    *walkbuf++ = *walk++;
+                }
+            }
+            *walkbuf = '\0';
+
+            /* and get ready to keep looking for replacements */
+            if (subs[0].rm_so == subs[0].rm_eo) {
+                if (subs[0].rm_so + pos >= string_len) {
+                    break;
+                }
+                new_l = strlen (buf) + 1;
+                if (new_l + 1 > buf_len) {
+                    buf_len = 1 + buf_len + 2 * new_l;
+                    nbuf = calloc(buf_len, sizeof(char));
+                    strcpy(nbuf, buf);
+                    free(buf);
+                    buf = nbuf;
+                }
+                pos += subs[0].rm_eo + 1;
+                buf [new_l-1] = string [pos-1];
+                buf [new_l] = '\0';
+            } else {
+                pos += subs[0].rm_eo;
+            }
+        } else { /* REG_NOMATCH */
+            new_l = strlen(buf) + strlen(&string[pos]);
+            if (new_l + 1 > buf_len) {
+                buf_len = new_l + 1; /* now we know exactly how long it is */
+                nbuf = calloc(buf_len, sizeof(char));
+                strcpy(nbuf, buf);
+                free(buf);
+                buf = nbuf;
+            }
+            /* stick that last bit of string on our output */
+            strcat(buf, &string[pos]);
+        }
+    }
+
+    /* don't want to leak memory .. */
+    free(subs);
+    my_regfree(&re);
+
+    /* whew. */
+    return (buf);
+}
+
+static int parse_mode(const char *mode)
+{
+	int flags = REG_EXTENDED | REG_NEWLINE;
+
+	if (mode) {
+  		do {
+			switch (*mode++) {
+				case 'i': flags |=  REG_ICASE;   break; /* case insensitive */
+				case 'c': flags &= ~REG_ICASE;   break; /* case sensitive   */
+				case 'n':  break; /* . matches newline */
+				case 'm':  break; /* multiple lines    */
+				case 'x':  break; /* ignore whitespace */
+				default: break;
+			}
+		} while (*mode != '\0');
+	}
+
+	fprintf(stderr, "flags are %X\n", flags);
+
+	return flags;
+}
+
+
+]]>  
+  </code>
+
+</extension>

@@ -1,0 +1,15 @@
+# Package: regexp   Test: regexp_like
+#
+# 
+
+-- disable_query_log
+-- disable_metadata
+
+-- source create_functions.inc
+
+# testing POSIX character classes
+SELECT REGEXP_LIKE("abcdef",       "^[[:alpha:]]+$") AS r1;
+SELECT REGEXP_LIKE("123456",       "^[[:alpha:]]+$") AS r2;
+SELECT REGEXP_LIKE("123abcdef",    "^[[:xdigit:]]+$") AS r3;
+
+-- source drop_functions.inc

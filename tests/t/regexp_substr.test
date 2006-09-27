@@ -1,0 +1,12 @@
+# Package: regexp   Test: regexp_substr
+#
+# 
+
+-- disable_query_log
+-- disable_metadata
+
+-- source create_functions.inc
+
+SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+") AS r1;
+
+-- source drop_functions.inc
