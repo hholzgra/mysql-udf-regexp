@@ -1,2 +1,108 @@
-This is a standalone UDF extension created using CodeGen_Mysql_UDF 0.9.5dev
-...
+UDF-regexp 0.9.5dev
+===================
+
+== Configuration ==
+
+This user defined function module relies on information only 
+available in the MySQL source code, it can't be compiled if
+you've only installed MySQL binary packages.
+
+To compile this package you need to first tell configure 
+where to find the MySQL source directory you want to compile
+against using the --with-mysql-src configure option, e.g:
+
+  configure --with-mysql-src=/home/username/src/mysql-5.0.37
+
+
+For a full list of configure options see 
+
+  configure --help
+
+By default the UDF library created by this package will install
+into /usr/local/lib. The mysql server may not be able to load
+it from there though as this directory may not be in its
+library search path. 
+
+You may solve this by:
+
+  - adding /usr/local/lib to the LD_LIBRARY_PATH before
+    invoking the mysql server
+
+  - changing the UDF install prefix by using either the
+    --prefix or --libdir configure option so that the
+    UDF library gets installed into a directory that is
+    in the servers load path
+
+  - or both of the above
+
+== Compilation ==
+
+Once you have successfully configured the package 
+you should be able to compile it by simply typing
+
+  make
+        
+== Testing ==
+
+This package includes test cases that can be invoked using
+ 
+  mysql test
+
+This relies on the following mysql binaries being available
+in your environments search $PATH to function as the tests
+rely on the mysql server test framework:
+
+ * mysql            - the mysql command line client
+ * mysqld           - the mysql server
+ * mysqladmin       - the mysql administration command line tool
+ * mysql_install_db - the database server initialisation tool
+ * mysqltest        - the actual test framework tool
+
+== Installing the library ==
+
+To install the generated UDF library you simply need to invoke
+
+  make install
+
+Depending on the target directories user permissions you might
+need to do this as superuser though, eg. by using "sudo":
+
+  sudo make install
+
+Remember that the mysql server will only be able to load the
+library if it is installed in a directory in its library load
+path, you may modify this search path by invoking the server
+with the $LD_LIBRARY_PATH environment variable set appropriately
+before starting.
+
+== Installing the actual functions ==
+
+To actually enable the functions provided by this UDF module
+you need to make them known to the MySQL server using 
+"CREATE FUNCTION" SQL commands:
+
+Register the functions provided by this UDF module using
+CREATE FUNCTION regexp_like RETURNS INTEGER SONAME "regexp.so";
+CREATE FUNCTION regexp_substr RETURNS STRING SONAME "regexp.so";
+CREATE FUNCTION regexp_instr RETURNS INTEGER SONAME "regexp.so";
+CREATE FUNCTION regexp_replace RETURNS STRING SONAME "regexp.so";
+
+Unregister the functions provided by this UDF module using
+DROP FUNCTION regexp_like;
+DROP FUNCTION regexp_substr;
+DROP FUNCTION regexp_instr;
+DROP FUNCTION regexp_replace;
+
+== Changing the source ==
+
+Changes applied to any of the files in this project may be 
+overwritten by further invocations of the udf-gen tool so
+you should always try to apply all necessary changes to the
+XML specification file the project was generated from instead
+and then regenerate the project from the spec file instead.
+
+The udf-gen tool will only overwrite files that actually 
+changed, so preserving file system time stamps of unmodified
+files, to play nice with "make" and to avoid unnecessary
+recompilation of source files.
+
