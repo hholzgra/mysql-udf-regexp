@@ -119,7 +119,7 @@ AC_DEFUN([WITH_MYSQL_SRC], [
 
   if test "x$MYSQL_SRCDIR" != "x"
   then
-    MYSQL_CONFIG_INCLUDE="-I$MYSQL_SRCDIR/include -I$MYSQL_SRCDIR"
+    MYSQL_CONFIG_INCLUDE="-I$MYSQL_SRCDIR/include -I$MYSQL_SRCDIR  -I$MYSQL_SRCDIR/sql "
     MYSQL_CONFIG_LIBS_R="-L$MYSQL_SRCDIR/libmysql_r/.libs -lmysqlclient_r -lz -lm"
   fi
 ])
@@ -175,6 +175,15 @@ AC_DEFUN([MYSQL_NEED_VERSION], [
 
 dnl check whether the installed server was compiled with libdbug
 dnl
+dnl TODO we also need to figure out whether we need to define
+dnl SAFEMALLOC, maybe PEDANTIC_SAFEMALLOC and SAFE_MUTEX, too
+dnl else we may run into errors like 
+dnl
+dnl   Can't open shared library '...' 
+dnl   (errno: 22 undefined symbol: my_no_flags_free)
+dnl
+dnl on loading plugins
+dnl
 dnl MYSQL_DEBUG_SERVER()
 dnl
 AC_DEFUN([MYSQL_DEBUG_SERVER], [
@@ -184,6 +193,8 @@ AC_DEFUN([MYSQL_DEBUG_SERVER], [
 
   OLD_CFLAGS=$CFLAGS
   CFLAGS="$CFLAGS $MYSQL_CONFIG_INCLUDE"
+  OLD_CXXFLAGS=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS $MYSQL_CONFIG_INCLUDE"
   # check for DBUG_ON/OFF being defined in my_config.h
   AC_TRY_COMPILE(,[
 #include "my_config.h"
@@ -198,6 +209,7 @@ AC_DEFUN([MYSQL_DEBUG_SERVER], [
 #endif
   ],AS_VAR_SET(MYSQL_DBUG, ["defined by header file"]),AS_VAR_SET(MYSQL_DBUG, unknown))
   CFLAGS=$OLD_CFLAGS
+  CXXFLAGS=$OLD_CXXFLAGS
 
 
   if test "$MYSQL_DBUG" = "unknown"
@@ -236,6 +248,7 @@ AC_DEFUN([MYSQL_DEBUG_SERVER], [
 
 
 dnl set up variables for compilation of regular C API applications
+dnl with optional embedded server
 dnl 
 dnl MYSQL_USE_CLIENT_API()
 dnl
@@ -248,10 +261,64 @@ AC_DEFUN([MYSQL_USE_CLIENT_API], [
 
   # add linker flags for client lib
   AC_ARG_ENABLE([embedded-mysql], [  --enable-embedded-mysql enable the MySQL embedded server feature], 
-    [MYSQL_LDFLAGS="$MYSQL_LDFLAGS "`$MYSQL_CONFIG --libmysqld-libs`],
+    [MYSQL_EMBEDDED_LDFLAGS()],
     [MYSQL_LDFLAGS="$MYSQL_LDFLAGS $MYSQL_CONFIG_LIBS_R"])
 ])
 
+
+
+dnl set up variables for compilation of regular C API applications
+dnl with mandatory embedded server
+dnl 
+dnl MYSQL_USE_EMBEDDED_API()
+dnl
+AC_DEFUN([MYSQL_USE_EMBEDDED_API], [
+  # add regular MySQL C flags
+  ADDFLAGS=$MYSQL_CONFIG_INCLUDE 
+
+  MYSQL_CFLAGS="$MYSQL_CFLAGS $ADDFLAGS"    
+  MYSQL_CXXFLAGS="$MYSQL_CXXFLAGS $ADDFLAGS"    
+
+  MYSQL_EMBEDDED_LDFLAGS()
+])
+
+
+dnl
+AC_DEFUN([MYSQL_EMBEDDED_LDFLAGS], [
+  MYSQL_LDFLAGS="$MYSQL_LDFLAGS "`$MYSQL_CONFIG --libmysqld-libs`
+
+  AC_MSG_CHECKING([for missing libs])
+  OLD_CFLAGS=$CFLAGS
+  OLD_LIBS=$LIBS
+  CFLAGS="$CFLAGS $MYSQL_CFLAGS"
+  for MISSING_LIBS in " " "-lz" "-lssl" "-lz -lssl"
+  do
+    LIBS="$OLD_LIBS $MYSQL_LDFLAGS $MISSING_LIBS"
+    AC_TRY_LINK([
+#include <stdio.h>
+#include <mysql.h>
+    ],[ 
+      mysql_server_init(0, NULL, NULL);
+    ], [
+      LINK_OK=yes
+    ], [
+      LINK_OK=no
+    ])
+    if test $LINK_OK = "yes"
+    then
+      MYSQL_LDFLAGS="$MYSQL_LDFLAGS $MISSING_LIBS"
+      AC_MSG_RESULT([$MISSING_LIBS])
+      break;
+    fi
+  done
+  if test $LINK_OK = "no"
+  then
+    AC_MSG_ERROR([linking still fails])
+  fi
+
+  LIBS=$OLD_LIBS
+  CFLAGS=$OLD_CFLAGS
+])
 
 
 
@@ -354,10 +421,14 @@ AC_DEFUN([MYSQL_USE_PLUGIN_API], [
   # reported by mysql_config
   ADDFLAGS=`echo $MYSQL_CONFIG_INCLUDE | sed -e"s/\/mysql\$//g"` 
 
-  MYSQL_CFLAGS="$MYSQL_CFLAGS $ADDFLAGS -DMYSQL_DYNAMIC_PLUGIN"    
-  MYSQL_CXXFLAGS="$MYSQL_CXXFLAGS $ADDFLAGS"    
+  MYSQL_CFLAGS="$ADDFLAGS $MYSQL_CONFIG_INCLUDE $MYSQL_CFLAGS -DMYSQL_DYNAMIC_PLUGIN"    
+
+  MYSQL_CXXFLAGS="$ADDFLAGS $MYSQL_CONFIG_INCLUDE $MYSQL_CXXFLAGS -DMYSQL_DYNAMIC_PLUGIN"
+  MYSQL_CXXFLAGS="$MYSQL_CXXFLAGS -fno-implicit-templates -fno-exceptions -fno-rtti"    
 
   MYSQL_PLUGIN_DIR=`$MYSQL_CLIENT -BNe "show variables like 'plugin_dir'" | sed -e "s/^plugin_dir\t//g"`
+
+  MYSQL_DEBUG_SERVER()
 ])
 
 
