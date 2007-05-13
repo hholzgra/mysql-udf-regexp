@@ -110,9 +110,9 @@ provided by the Oracle regular expression functions.
 
 ]]>
     </code>
-	
-	<test>
-	  <code>
+    
+    <test>
+      <code>
 -- testing simple cases
 SELECT REGEXP_LIKE("xxxabcxxx", ".*abc.*") AS r1;
 SELECT REGEXP_LIKE("xxxabdxxx", ".*abc.*") AS r2;
@@ -151,7 +151,7 @@ r3
 1
       </result>
 
-	</test>
+    </test>
 
   </function>
 
@@ -249,9 +249,9 @@ r3
     }
 
     if (stat) {
-		if (stat != REG_NOMATCH) {
-        	fprintf(stderr, "regexec error %d '%s' '%s'\n", stat, pattern, text);
-		}
+        if (stat != REG_NOMATCH) {
+            fprintf(stderr, "regexec error %d '%s' '%s'\n", stat, pattern, text);
+        }
         RETURN_NULL;
     }
 
@@ -404,10 +404,10 @@ ABC
 
     copy = strndup(text, text_len);
     match.rm_eo = 0;
-	do {
-		position += match.rm_eo;
-	    stat = my_regexec(&data->expr, copy + (size_t)position, 1, &match, 0);
-	} while ((stat == 0) && --occurrence > 0);
+    do {
+        position += match.rm_eo;
+        stat = my_regexec(&data->expr, copy + (size_t)position, 1, &match, 0);
+    } while ((stat == 0) && --occurrence > 0);
 
     free(copy);
 
@@ -496,10 +496,10 @@ r3
       char *result;
 
       if (position) {
-        position -= 1; /* oracle offsets start at 1, not 0 */
-        if (position >= text_len) {
-            RETURN_NULL;
-        }
+          position -= 1; /* oracle offsets start at 1, not 0 */
+          if (position >= text_len) {
+              RETURN_NULL;
+          }
       }
 
       c_pattern = strndup(pattern, pattern_len);
@@ -513,9 +513,9 @@ r3
       free(c_text);
 
       if (result) {
-        RETURN_STRING(result);
+          RETURN_STRING(result);
       } else {
-        RETURN_NULL;
+          RETURN_NULL;
       }
     </code>
     <test>
@@ -706,22 +706,22 @@ static char *my_regex_replace(const char *pattern, const char *replace, const ch
 
 static int parse_mode(const char *mode, int len)
 {
-	int flags = REG_EXTENDED | REG_NEWLINE;
+    int flags = REG_EXTENDED | REG_NEWLINE;
 
-	if (mode) {
-		while (len-- > 0) {
-			switch (*mode++) {
-				case 'i': flags |=	REG_ICASE;	 break; /* case insensitive */
-				case 'c': flags &= ~REG_ICASE;	 break; /* case sensitive	*/
-				case 'n':  break; /* . matches newline */
-				case 'm':  break; /* multiple lines    */
-				case 'x':  break; /* ignore whitespace */
-				default: break;
-			}
-		}
-	}
+    if (mode) {
+        while (len-- > 0) {
+            switch (*mode++) {
+                case 'i': flags |=  REG_ICASE;   break; /* case insensitive */
+                case 'c': flags &= ~REG_ICASE;   break; /* case sensitive   */
+                case 'n':  break; /* . matches newline */
+                case 'm':  break; /* multiple lines    */
+                case 'x':  break; /* ignore whitespace */
+                default: break;
+            }
+        }
+    }
 
-	return flags;
+    return flags;
 }
 
 
