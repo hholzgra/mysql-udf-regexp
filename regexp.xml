@@ -232,7 +232,6 @@ r3
     copy = strndup(text, text_len);
 
     while (occurence > 0) {
-        fprintf(stderr, "occ %d, pos %d, text '%s'\n", (int)occurence, (int)position, text);
         stat = my_regexec(&data->expr, copy + position, 1, &match, 0);
         if (stat) {
             break;
@@ -488,7 +487,7 @@ r3
     <param name="pattern"   type="string"/>
     <param name="replace"   type="string"/>
     <param name="position"  type="int" optional="yes" default="1"/>
-    <param name="occurence" type="int" optional="yes" default="1"/>
+    <param name="occurence" type="int" optional="yes" default="0"/>
     <param name="mode"      type="string" optional="yes" default="c"/>
 
     <code>
@@ -504,9 +503,9 @@ r3
 
       c_pattern = strndup(pattern, pattern_len);
       c_replace = strndup(replace, replace_len);
-      c_text    = strndup(text,    text_len);
+      c_text    = strndup(text, text_len);
 
-      result = my_regex_replace(c_pattern, c_replace, c_text);
+      result = my_regex_replace(c_pattern, c_replace, c_text, position, occurence, parse_mode(mode, mode_len));
 
       free(c_pattern);
       free(c_replace);
@@ -529,35 +528,35 @@ lala bar lala
      </result>
      <code>
 -- multiple match check
-SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar") AS r1;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar") AS r2;
      </code>
      <result>
-r1
+r2
 lala bar lala bar lalala
      </result>
      <code>
 -- position parameter check
-SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 1) AS r1;
-SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 10) AS r2;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 1) AS r3;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 10) AS r4;
      </code>
      <result>
-r1
+r3
 lala bar lala bar lalala
-r2
+r4
 lala foo lala bar lalala
      </result>
      <code>
 -- occurence parameter check
-SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 0) AS r1;
-SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 1) AS r2;
-SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 2) AS r2;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", NULL, 0) AS r5;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", NULL, 1) AS r6;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", NULL, 2) AS r7;
      </code>
      <result>
-r1
+r5
 lala bar lala bar lalala
-r2
+r6
 lala bar lala foo lalala
-r3
+r7
 lala foo lala bar lalala
      </result>
     </test>
@@ -571,7 +570,12 @@ lala foo lala bar lalala
 #include <regex/my_regex.h>
 
 // helper function borrowed from PHP, slightly modified
-static char *my_regex_replace(const char *pattern, const char *replace, const char *string)
+static char *my_regex_replace(const char *pattern, 
+                              const char *replace, 
+                              const char *string, 
+                              int position,
+                              int occurence, 
+                              int mode)
 {
     my_regex_t re;
     my_regmatch_t *subs;
@@ -582,11 +586,12 @@ static char *my_regex_replace(const char *pattern, const char *replace, const ch
     const char *walk; /* used to walk replacement string for backrefs */
     int buf_len;
     int pos, tmp, string_len, new_l;
-    int err, copts = REG_EXTENDED;
+    int err;
+    int match_no;
 
     string_len = strlen(string);
 
-    err = my_regcomp(&re, pattern, copts, &my_charset_latin1);
+    err = my_regcomp(&re, pattern, mode, &my_charset_latin1);
     if (err) {
         return NULL;
     }
@@ -599,10 +604,20 @@ static char *my_regex_replace(const char *pattern, const char *replace, const ch
     buf_len = 2 * string_len + 1;
     buf = calloc(buf_len, sizeof(char));
 
-    err = pos = 0;
-    buf[0] = '\0';
+    err = 0;
+    match_no = 0;
+
+    if (position) {
+        // obey request to skip string start
+        pos = position;
+        strncpy(buf, string, pos);
+    } else {
+        pos = 0;
+        buf[0] = '\0';
+    }
+
     while (!err) {
-        err = my_regexec(&re, &string[pos], re.re_nsub+1, subs, (pos ? REG_NOTBOL : 0));
+        err = my_regexec(&re, &string[pos], re.re_nsub+1, subs, mode | (pos ? REG_NOTBOL : 0));
 
         if (err && err != REG_NOMATCH) {
             free(subs);
@@ -610,6 +625,22 @@ static char *my_regex_replace(const char *pattern, const char *replace, const ch
             my_regfree(&re);
             return NULL;
         }
+
+        match_no++;
+
+        if ((occurence > 0)) {
+            if (match_no < occurence) {
+                // append pattern up to the match end 
+                // no need to recalculate the buffer size here 
+                // as no replaces have occured yet
+                strncat(buf, &string[pos], subs[0].rm_eo);
+                pos += subs[0].rm_eo;
+                continue;
+            } else if (match_no > occurence) {
+                err = REG_NOMATCH;
+            }
+        }
+
 
         if (!err) {
             /* backref replacement is done in two passes:
