@@ -1,2 +1,15 @@
-This is a standalone UDF extension created using CodeGen_Mysql_UDF 0.9.5dev
-...
+UDF-regexp 0.9.5dev
+===================
+
+MySQL functions emulating a subset of the Oracle REGEXP functions
+
+The functions provided by this package provide a subset of the functionality
+provided by the Oracle regular expression functions. 
+
+
+See the INSTALL file for installation instruction
+
+-- 
+This UDF extension was created using CodeGen_Mysql_UDF 0.9.7dev
+
+http://codegenerators.php-baustelle.de/trac/wiki/CodeGen_MySQL_UDF\N
