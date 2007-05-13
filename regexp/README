@@ -1,5 +1,5 @@
-UDF-regexp 0.9.5dev
-===================
+UDF-regexp 1.0
+==============
 
 MySQL functions emulating a subset of the Oracle REGEXP functions
 

@@ -1802,7 +1802,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=UDF-regexp
- VERSION=0.1
+ VERSION=1.0
 
 
 cat >>confdefs.h <<_ACEOF

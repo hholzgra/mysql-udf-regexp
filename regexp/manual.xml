@@ -4,7 +4,7 @@
 ]>
 
 <book>
- <title><literal>UDF-regexp 0.9.5dev</literal> - MySQL functions emulating a subset of the Oracle REGEXP functions</title>
+ <title><literal>UDF-regexp 1.0</literal> - MySQL functions emulating a subset of the Oracle REGEXP functions</title>
  <chapter>
   <title>Introduction</title>
    <para>
