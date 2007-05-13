@@ -36,7 +36,7 @@ mkdir $DATA
 
 mysql_install_db --datadir=$DATA > $DATA/test.err
 
-mysqld --skip-networking --skip-innodb --skip-bdb \
+mysqld --skip-networking --skip-innodb \
        --datadir=$DATA --socket=$SOCK \
        2>> $DATA/test.err &
 

@@ -7,11 +7,11 @@
 
 -- source create_functions.inc
 
-# get character position of match start
+-- get character position of match start
 SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox", 1, 1, 0) AS r1;
-# get character position of match end
+-- get character position of match end
 SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox", 1, 1, 1) AS r2;
-# get character position of match end, use defauts for unused parameters
+-- get character position of match end, use defauts for unused parameters
 SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox", NULL, NULL, 1) AS r3;
 
 -- source drop_functions.inc

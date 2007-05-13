@@ -7,7 +7,7 @@
 
 -- source create_functions.inc
 
-# testing POSIX character classes
+-- testing POSIX character classes
 SELECT REGEXP_LIKE("abcdef",       "^[[:alpha:]]+$") AS r1;
 SELECT REGEXP_LIKE("123456",       "^[[:alpha:]]+$") AS r2;
 SELECT REGEXP_LIKE("123abcdef",    "^[[:xdigit:]]+$") AS r3;

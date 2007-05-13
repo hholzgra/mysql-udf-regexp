@@ -7,6 +7,9 @@
 
 -- source create_functions.inc
 
-SELECT REGEXP_REPLACE("lala foo lala", "foo", "bar") AS r1;
+-- occurence parameter check
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 0) AS r1;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 1) AS r2;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 2) AS r2;
 
 -- source drop_functions.inc
