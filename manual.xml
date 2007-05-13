@@ -1,0 +1,308 @@
+<?xml version='1.0'?>
+<!DOCTYPE book PUBLIC '-//OASIS//DTD DocBook XML V4.3//EN'
+          'http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd' [
+]>
+
+<book>
+ <title><literal>UDF-regexp 0.9.5dev</literal> - MySQL functions emulating a subset of the Oracle REGEXP functions</title>
+ <chapter>
+  <title>Introduction</title>
+   <para>
+The functions provided by this package provide a subset of the functionality
+provided by the Oracle regular expression functions. 
+
+  </para>
+ </chapter>
+ <chapter>
+  <title>Installation</title>
+  <section>
+   <title>Configuration</title>
+    <para>
+     This user defined function module relies on information only 
+     available in the MySQL source code, it can't be compiled if
+     you've only installed MySQL binary packages.
+    </para>
+    <para>
+     To compile this package you need to first tell configure 
+     where to find the MySQL source directory you want to compile
+     against using the <option>--with-mysql-src</option> configure 
+     option, e.g:
+    </para>
+    <informalexample>
+     <programlisting>
+      configure --with-mysql-src=/home/username/src/mysql-5.0.37
+     </programlisting>
+    </informalexample>
+    <para>
+     For a full list of configure options see 
+    </para>
+    <informalexample>
+     <programlisting>
+      configure --help
+     </programlisting>
+    </informalexample>
+    <warning>
+     <para>
+      By default the UDF library created by this package will install
+      into <filename>/usr/local/lib</filename>. The mysql server may 
+      not be able to load it from there though as this directory may 
+      not be in its library search path. 
+     </para>
+     <para>
+      You may solve this by:
+      <itemizedlist>
+       <listitem>
+        <para>
+         adding <filename>/usr/local/lib</filename> to the 
+         <literal>LD_LIBRARY_PATH</literal> before invoking the mysql 
+         server
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         changing the UDF install prefix by using either the
+         <option>--prefix</option> or <option>--libdir</option>
+         configure option so that the UDF library gets installed 
+         into a directory that is in the servers load path
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         or both of the above
+        </para>
+       </listitem>
+      </itemizedlist>
+     </para>
+    </warning>
+   </section>
+   <section>
+    <title>Compilation</title>
+    <para>
+     Once you have successfully configured the package 
+     you should be able to compile it by simply typing
+    </para>
+    <informalexample>
+     <programlisting>
+     make
+     </programlisting>
+    </informalexample>
+   </section>
+   <section>
+    <title>Testing</title>
+    <para>
+     This package includes test cases that can be invoked using
+     <informalexample>
+      <programlisting>
+      make test
+      </programlisting>
+     </informalexample>
+   </para>
+   <para>
+    This relies on the following mysql binaries being available
+    in your environments search <literal>$PATH</literal> to function 
+    as the tests rely on the mysql server test framework:
+    <itemizedlist>
+     <listitem><para><command>mysql</command> - the mysql command line client</para></listitem>
+     <listitem><para><command>mysqld</command> - the mysql server</para></listitem>
+     <listitem><para><command>mysqladmin</command> - the mysql administration command line tool</para></listitem>
+     <listitem><para><command>mysql_install_db</command> - the database server initialisation tool</para></listitem>
+     <listitem><para><command>mysqltest</command> - the actual test framework tool</para></listitem>
+    </itemizedlist>
+   </para>
+  </section>
+  <section>
+   <title>Installing the library</title>
+    <para>
+     To install the generated UDF library you simply need to invoke
+     <informalexample>
+      <programlisting>
+       make install
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     Depending on the target directories user permissions you might
+     need to do this as superuser though, eg. by using <command>sudo</command>:
+     <informalexample>
+      <programlisting>
+       sudo make install
+      </programlisting>
+     </informalexample>
+    </para>
+    <note>
+     <para>
+      Remember that the mysql server will only be able to load the
+      library if it is installed in a directory in its library load
+      path, you may modify this search path by invoking the server
+      with the <literal>$LD_LIBRARY_PATH</literal> environment variable 
+      set appropriately before starting.
+     </para>
+    </note>
+   </section>
+   <section>
+    <title>Installing the actual functions</title>
+    <para>
+To actually enable the functions provided by this UDF module
+you need to make them known to the MySQL server using 
+<literal>CREATE FUNCTION</literal> SQL commands:
+    </para>
+    <para>
+     Register the functions provided by this UDF module using
+     <informalexample>
+      <programlisting> 
+CREATE FUNCTION regexp_like RETURNS INTEGER SONAME "regexp.so";
+CREATE FUNCTION regexp_substr RETURNS STRING SONAME "regexp.so";
+CREATE FUNCTION regexp_instr RETURNS INTEGER SONAME "regexp.so";
+CREATE FUNCTION regexp_replace RETURNS STRING SONAME "regexp.so";
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     Unregister the functions provided by this UDF module using
+     <informalexample>
+      <programlisting>
+DROP FUNCTION regexp_like;
+DROP FUNCTION regexp_substr;
+DROP FUNCTION regexp_instr;
+DROP FUNCTION regexp_replace;
+      </programlisting>
+     </informalexample>
+    </para>
+   </section>
+   <section>
+    <title>Changing the source</title>
+    <para>
+     Changes applied to any of the files in this project may be 
+     overwritten by further invocations of the <command>udf-gen</command>
+     tool so you should always try to apply all necessary changes to the
+     XML specification file the project was generated from instead
+     and then regenerate the project from the spec file instead.
+    </para>
+    <para>
+     The udf-gen tool will only overwrite files that actually 
+     changed, so preserving file system time stamps of unmodified
+     files, to play nice with <command>make</command> and to avoid 
+     unnecessary recompilation of source files.
+    </para>
+   </section>
+ </chapter>
+ <chapter>
+  <title>Functions provided by this UDF module</title>
+
+<refentry id='function.regexp-like'>
+ <refnamediv>
+  <refname>regexp_like</refname>
+  <refpurpose>Compare strings against a regular expression pattern</refpurpose>
+ </refnamediv>
+ <refsect1>
+  <title>Signature</title>
+  <methodsynopsis>
+   <type>int</type><methodname>regexp_like</methodname>
+   <methodparam/><type>string</type><parameter>text</parameter</methodparam>
+   <methodparam/><type>string</type><parameter>pattern</parameter</methodparam>
+   <methodparam/><type>string</type><parameter>mode</parameter</methodparam>
+  </methodsynopsis>
+  <para>
+</para>
+<para>
+  </para>
+ </refsect1>
+ <refsect1>
+  <title>Description</title>
+  <para>
+</para>
+<para>
+  </para>
+ </refsect1>
+</refentry>
+
+<refentry id='function.regexp-substr'>
+ <refnamediv>
+  <refname>regexp_substr</refname>
+  <refpurpose></refpurpose>
+ </refnamediv>
+ <refsect1>
+  <title>Signature</title>
+  <methodsynopsis>
+   <type>string</type><methodname>regexp_substr</methodname>
+   <methodparam/><type>string</type><parameter>text</parameter</methodparam>
+   <methodparam/><type>string</type><parameter>pattern</parameter</methodparam>
+   <methodparam choice='opt'/><type>int</type><parameter>position = 1</parameter</methodparam>
+   <methodparam choice='opt'/><type>int</type><parameter>occurence = 1</parameter</methodparam>
+   <methodparam choice='opt'/><type>string</type><parameter>mode = c</parameter</methodparam>
+  </methodsynopsis>
+  <para>
+</para>
+<para>
+  </para>
+ </refsect1>
+ <refsect1>
+  <title>Description</title>
+  <para>
+</para>
+<para>
+  </para>
+ </refsect1>
+</refentry>
+
+<refentry id='function.regexp-instr'>
+ <refnamediv>
+  <refname>regexp_instr</refname>
+  <refpurpose></refpurpose>
+ </refnamediv>
+ <refsect1>
+  <title>Signature</title>
+  <methodsynopsis>
+   <type>int</type><methodname>regexp_instr</methodname>
+   <methodparam/><type>string</type><parameter>text</parameter</methodparam>
+   <methodparam/><type>string</type><parameter>pattern</parameter</methodparam>
+   <methodparam choice='opt'/><type>int</type><parameter>position = 1</parameter</methodparam>
+   <methodparam choice='opt'/><type>int</type><parameter>occurrence = 1</parameter</methodparam>
+   <methodparam choice='opt'/><type>int</type><parameter>return_end = 0</parameter</methodparam>
+   <methodparam choice='opt'/><type>string</type><parameter>mode = c</parameter</methodparam>
+  </methodsynopsis>
+  <para>
+</para>
+<para>
+  </para>
+ </refsect1>
+ <refsect1>
+  <title>Description</title>
+  <para>
+</para>
+<para>
+  </para>
+ </refsect1>
+</refentry>
+
+<refentry id='function.regexp-replace'>
+ <refnamediv>
+  <refname>regexp_replace</refname>
+  <refpurpose></refpurpose>
+ </refnamediv>
+ <refsect1>
+  <title>Signature</title>
+  <methodsynopsis>
+   <type>string</type><methodname>regexp_replace</methodname>
+   <methodparam/><type>string</type><parameter>text</parameter</methodparam>
+   <methodparam/><type>string</type><parameter>pattern</parameter</methodparam>
+   <methodparam/><type>string</type><parameter>replace</parameter</methodparam>
+   <methodparam choice='opt'/><type>int</type><parameter>position = 1</parameter</methodparam>
+   <methodparam choice='opt'/><type>int</type><parameter>occurence = 1</parameter</methodparam>
+   <methodparam choice='opt'/><type>string</type><parameter>mode = c</parameter</methodparam>
+  </methodsynopsis>
+  <para>
+</para>
+<para>
+  </para>
+ </refsect1>
+ <refsect1>
+  <title>Description</title>
+  <para>
+</para>
+<para>
+  </para>
+ </refsect1>
+</refentry>
+  </chapter>
+</book>
