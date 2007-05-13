@@ -2,6 +2,15 @@
 <!DOCTYPE udf SYSTEM "udf_extension.dtd">
 <extension name="regexp" version="0.9.5dev">
 
+  <summary>MySQL functions emulating a subset of the Oracle REGEXP functions</summary>
+
+  <description>
+<![CDATA[
+The functions provided by this package provide a subset of the functionality
+provided by the Oracle regular expression functions. 
+]]>
+  </description>
+
   <maintainer>
     <name>Hartmut Holzgraefe</name>
     <email>hartmut@mysql.com</email>
@@ -22,8 +31,9 @@
    <src/>
   </deps>
 
-
   <function name="regexp_like" returns="int" null="yes">
+    <summary>Compare strings against a regular expression pattern</summary>
+
     <param name="text"    type="string"/>
     <param name="pattern" type="string"/>
     <param name="mode"    type="string" optional="yes"/>
@@ -34,7 +44,7 @@
     </data>               
 
     <init>
-<?data
+<![CDATA[
     if (pattern) {
         // static regex pattern -> we can compile it once and reuse it 
         int stat;
@@ -55,20 +65,20 @@
     } else {
         data->dynamic = 1;
     }
-?>
+]]>
     </init>
 
     <deinit>
-<?data
+<![CDATA[
     if (!data->dynamic) {
         // free static compiler pattern
         my_regfree(&data->expr);
     }
-?>
+]]>
     </deinit>
 
     <code>
-<?data
+<![CDATA[
     my_regmatch_t match;
     int stat;
     char *copy;
@@ -98,12 +108,12 @@
 
     RETURN_INT(stat == REG_NOMATCH ? 0 : 1);
 
-?>
+]]>
     </code>
 	
 	<test>
 	  <code>
-# testing simple cases
+-- testing simple cases
 SELECT REGEXP_LIKE("xxxabcxxx", ".*abc.*") AS r1;
 SELECT REGEXP_LIKE("xxxabdxxx", ".*abc.*") AS r2;
       </code>
@@ -115,7 +125,7 @@ r2
       </result>
 
       <code>
-# testing case sensitivity
+-- testing case sensitivity
 SELECT REGEXP_LIKE("xxxABCxxx", ".*abc.*") AS r3;
 SELECT REGEXP_LIKE("xxxABCxxx", ".*abc.*", "i") AS r4;
       </code>
@@ -127,7 +137,7 @@ r4
       </result>
 
       <code>
-# testing POSIX character classes
+-- testing POSIX character classes
 SELECT REGEXP_LIKE("abcdef",       "^[[:alpha:]]+$") AS r1;
 SELECT REGEXP_LIKE("123456",       "^[[:alpha:]]+$") AS r2;
 SELECT REGEXP_LIKE("123abcdef",    "^[[:xdigit:]]+$") AS r3;
@@ -147,8 +157,11 @@ r3
 
 
   <function name="regexp_substr" returns="string" null="yes">
-    <param name="text"    type="string"/>
-    <param name="pattern" type="string"/>
+    <param name="text"      type="string"/>
+    <param name="pattern"   type="string"/>
+    <param name="position"  type="int" optional="yes" default="1"/>
+    <param name="occurence" type="int" optional="yes" default="1"/>
+    <param name="mode"      type="string" optional="yes" default="c"/>
 
     <data>
      <element name="expr"    type="my_regex_t"/>
@@ -156,102 +169,7 @@ r3
     </data>               
 
     <init>
-<?data
-    if (pattern) {
-        // static regex pattern -> we can compile it once and reuse it 
-        int stat;
-        char *copy;
-
-        // we have to make sure we have a NUL terminated C string
-        // as argument for my_regcomp           
-        copy = strndup(pattern, pattern_len);
-        stat  = my_regcomp(&data->expr, copy, REG_EXTENDED, &my_charset_latin1);
-        free(copy);
-
-        if (stat) {
-            sprintf(message, "regcomp failed (error: %d)", stat);
-            return 1; 
-        }
-
-        data->dynamic = 0;
-    } else {
-        data->dynamic = 1;
-    }
-?>
-    </init>
-
-    <deinit>
-<?data
-    if (!data->dynamic) {
-        // free static compiler pattern
-        my_regfree(&data->expr);
-    }
-?>
-    </deinit>
-
-    <code>
-<?data
-    my_regmatch_t match;
-    int stat;
-    char *copy;
-    
-    if (data->dynamic) {
-        copy = strndup(pattern, pattern_len);
-        stat  = my_regcomp(&data->expr, copy, REG_EXTENDED, &my_charset_latin1);
-        free(copy);
-        if (stat) {
-            // TODO: need ERROR() and WARNING() macro
-            RETURN_NULL;
-        }
-    }
-
-    copy = strndup(text, text_len);
-    stat = my_regexec(&data->expr, copy, 1, &match, 0);
-    free(copy);
-
-    if (data->dynamic) {
-        my_regfree(&data->expr);
-    }
-
-    if (stat) {
-		if (stat != REG_NOMATCH) {
-        	fprintf(stderr, "regexec error %d '%s' '%s'\n", stat, pattern, text);
-		}
-        RETURN_NULL;
-    }
-
-    RETURN_STRINGL(text + match.rm_so, match.rm_eo - match.rm_so);
-
-?>
-    </code>
-    <test>
-      <code>
-SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+") AS r1;
-      </code>
-      <result>
-r1
-123
-      </result>
-    </test>
-  </function>
-
-
-  <function name="regexp_instr" returns="int" null="yes">
-    <param name="text"       type="string"/>
-    <param name="pattern"    type="string"/>
-    <param name="position"   type="int"    optional="yes" default="1"/>
-    <param name="occurrence" type="int"    optional="yes" default="1"/>
-    <param name="return_end" type="int"    optional="yes" default="0"/>
-    <param name="mode"       type="string" optional="yes" default="c"/>
-    
-
-    <data>
-     <element name="expr"    type="my_regex_t"/>
-     <element name="dynamic" type="int" />
-    </data>               
-
-    <init>
-<?data
+<![CDATA[
     if (pattern) {
         // static regex pattern -> we can compile it once and reuse it 
         int stat;
@@ -272,27 +190,207 @@ r1
     } else {
         data->dynamic = 1;
     }
-?>
+]]>
     </init>
 
     <deinit>
-<?data
+<![CDATA[
     if (!data->dynamic) {
         // free static compiler pattern
         my_regfree(&data->expr);
     }
-?>
+]]>
     </deinit>
 
     <code>
-<?data
+<![CDATA[
+    my_regmatch_t match;
+    int stat = 0;
+    char *copy;
+    
+    if (occurence < 1) {
+        RETURN_NULL;
+    }
+
+    if (position) {
+        position -= 1; /* oracle offsets start at 1, not 0 */
+        if (position >= text_len) {
+            RETURN_NULL;
+        }
+    }
+
+    if (data->dynamic) {
+        copy = strndup(pattern, pattern_len);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        free(copy);
+        if (stat) {
+            // TODO: need ERROR() and WARNING() macro
+            RETURN_NULL;
+        }
+    }
+
+    copy = strndup(text, text_len);
+
+    while (occurence > 0) {
+        fprintf(stderr, "occ %d, pos %d, text '%s'\n", (int)occurence, (int)position, text);
+        stat = my_regexec(&data->expr, copy + position, 1, &match, 0);
+        if (stat) {
+            break;
+        }
+        if (--occurence) {
+            position += match.rm_eo;
+        }
+    }
+
+    free(copy);
+
+    if (data->dynamic) {
+        my_regfree(&data->expr);
+    }
+
+    if (stat) {
+		if (stat != REG_NOMATCH) {
+        	fprintf(stderr, "regexec error %d '%s' '%s'\n", stat, pattern, text);
+		}
+        RETURN_NULL;
+    }
+
+    RETURN_STRINGL(text + position + match.rm_so, match.rm_eo - match.rm_so);
+
+]]>
+    </code>
+    <test>
+      <code>
+-- checking simple case
+SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+") AS r1;
+      </code>
+      <result>
+r1
+123
+      </result>
+      <code>
+-- checking position offsets
+SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+", 5) AS r2;
+SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+", 6) AS r3;
+SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+", 10) AS r4;
+      </code>
+      <result>
+r2
+123
+r3
+23
+r4
+NULL
+      </result>
+      <code>
+-- checking occurence
+SELECT REGEXP_SUBSTR("abc 123 def 456 ghi", "[[:digit:]]+", 1, 1) AS r5;
+SELECT REGEXP_SUBSTR("abc 123 def 456 ghi", "[[:digit:]]+", 1, 2) AS r6;
+      </code>
+      <result>
+r5
+123
+r6
+456
+      </result>
+      <code>
+-- checking the 'i' flag
+SELECT REGEXP_SUBSTR("xxx abc xxx", "abc", 1, 1, 'i') AS r7;
+SELECT REGEXP_SUBSTR("xxx ABC xxx", "abc", 1, 1, 'i') AS r8;
+SELECT REGEXP_SUBSTR("xxx abc xxx", "ABC", 1, 1, 'i') AS r9;
+SELECT REGEXP_SUBSTR("xxx ABC xxx", "ABC", 1, 1, 'i') AS r10;
+      </code>
+      <result>
+r7
+abc
+r8
+ABC
+r9
+abc
+r10
+ABC
+      </result>
+      <code>
+-- checking the 'c' flag
+SELECT REGEXP_SUBSTR("xxx abc xxx", "abc", 1, 1, 'c') AS r11;
+SELECT REGEXP_SUBSTR("xxx ABC xxx", "abc", 1, 1, 'c') AS r12;
+SELECT REGEXP_SUBSTR("xxx abc xxx", "ABC", 1, 1, 'c') AS r13;
+SELECT REGEXP_SUBSTR("xxx ABC xxx", "ABC", 1, 1, 'c') AS r14;
+      </code>
+      <result>
+r11
+abc
+r12
+NULL
+r13
+NULL
+r14
+ABC
+      </result>
+    </test>
+  </function>
+
+
+  <function name="regexp_instr" returns="int" null="yes">
+    <param name="text"       type="string"/>
+    <param name="pattern"    type="string"/>
+    <param name="position"   type="int"    optional="yes" default="1"/>
+    <param name="occurrence" type="int"    optional="yes" default="1"/>
+    <param name="return_end" type="int"    optional="yes" default="0"/>
+    <param name="mode"       type="string" optional="yes" default="c"/>
+    
+
+    <data>
+     <element name="expr"    type="my_regex_t"/>
+     <element name="dynamic" type="int" />
+    </data>               
+
+    <init>
+<![CDATA[
+    if (pattern) {
+        // static regex pattern -> we can compile it once and reuse it 
+        int stat;
+        char *copy;
+
+        // we have to make sure we have a NUL terminated C string
+        // as argument for my_regcomp           
+        copy = strndup(pattern, pattern_len);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        free(copy);
+
+        if (stat) {
+            sprintf(message, "regcomp failed (error: %d)", stat);
+            return 1; 
+        }
+
+        data->dynamic = 0;
+    } else {
+        data->dynamic = 1;
+    }
+]]>
+    </init>
+
+    <deinit>
+<![CDATA[
+    if (!data->dynamic) {
+        // free static compiler pattern
+        my_regfree(&data->expr);
+    }
+]]>
+    </deinit>
+
+    <code>
+<![CDATA[
     my_regmatch_t match;
     int stat;
     char *copy;
 
-	if (position) {
-	  position -= 1; /* oracle offsets start at 1, not 0 */
-	}
+    if (position) {
+        position -= 1; /* oracle offsets start at 1, not 0 */
+        if (position >= text_len) {
+            RETURN_NULL;
+        }
+    }
  
     if (data->dynamic) {
         copy = strndup(pattern, pattern_len);
@@ -323,10 +421,11 @@ r1
     }
 
     RETURN_INT(position + (return_end ? match.rm_eo : match.rm_so + 1));
-?>
+]]>
     </code>
     <test>
       <code>
+-- simple match
 SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox") AS r1;
       </code>
       <result>
@@ -334,6 +433,7 @@ r1
 17
       </result>
       <code>
+-- checking position parameter
 SELECT REGEXP_INSTR("lala abc lala abc lala", "abc")    AS r1;
 SELECT REGEXP_INSTR("lala abc lala abc lala", "abc", 6) AS r2;
 SELECT REGEXP_INSTR("lala abc lala abc lala", "abc", 7) AS r3;
@@ -347,6 +447,7 @@ r3
 15
       </result>
       <code>
+-- checking occurence parameter
 SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 1) AS r1;
 SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 2) AS r2;
 SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 3) AS r3;
@@ -363,11 +464,11 @@ r4
 NULL
       </result>
       <code>
-# get character position of match start
+-- get character position of match start
 SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox", 1, 1, 0) AS r1;
-# get character position of match end
+-- get character position of match end
 SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox", 1, 1, 1) AS r2;
-# get character position of match end, use defauts for unused parameters
+-- get character position of match end, use defauts for unused parameters
 SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox", NULL, NULL, 1) AS r3;
       </code>
       <result>
@@ -383,13 +484,23 @@ r3
 
 
   <function name="regexp_replace" returns="string" null="yes">
-    <param name="text"    type="string"/>
-    <param name="pattern" type="string"/>
-    <param name="replace" type="string"/>
+    <param name="text"      type="string"/>
+    <param name="pattern"   type="string"/>
+    <param name="replace"   type="string"/>
+    <param name="position"  type="int" optional="yes" default="1"/>
+    <param name="occurence" type="int" optional="yes" default="1"/>
+    <param name="mode"      type="string" optional="yes" default="c"/>
 
     <code>
       char *c_pattern, *c_replace, *c_text;
       char *result;
+
+      if (position) {
+        position -= 1; /* oracle offsets start at 1, not 0 */
+        if (position >= text_len) {
+            RETURN_NULL;
+        }
+      }
 
       c_pattern = strndup(pattern, pattern_len);
       c_replace = strndup(replace, replace_len);
@@ -409,11 +520,45 @@ r3
     </code>
     <test>
      <code>
+-- simple check
 SELECT REGEXP_REPLACE("lala foo lala", "foo", "bar") AS r1;
      </code>
      <result>
 r1
 lala bar lala
+     </result>
+     <code>
+-- multiple match check
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar") AS r1;
+     </code>
+     <result>
+r1
+lala bar lala bar lalala
+     </result>
+     <code>
+-- position parameter check
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 1) AS r1;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 10) AS r2;
+     </code>
+     <result>
+r1
+lala bar lala bar lalala
+r2
+lala foo lala bar lalala
+     </result>
+     <code>
+-- occurence parameter check
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 0) AS r1;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 1) AS r2;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 2) AS r2;
+     </code>
+     <result>
+r1
+lala bar lala bar lalala
+r2
+lala bar lala foo lalala
+r3
+lala foo lala bar lalala
      </result>
     </test>
   </function>
@@ -421,15 +566,8 @@ lala bar lala
   <code role="header" position="top">
 <![CDATA[
 
-#if 0
-#if MYSQL_VERSION_ID < 50000
-#error need MySQL >= 5.0
-#endif
-#endif
-
 #include <sys/types.h>
 
-// TODO: my_regex.h is not installed by "make install"
 #include <regex/my_regex.h>
 
 // helper function borrowed from PHP, slightly modified
