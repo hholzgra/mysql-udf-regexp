@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <!DOCTYPE udf SYSTEM "udf_extension.dtd">
-<extension name="regexp" version="0.9.5dev">
+<extension name="regexp" version="0.9.8">
 
   <summary>MySQL functions emulating a subset of the Oracle REGEXP functions</summary>
 
@@ -19,11 +19,11 @@ provided by the Oracle regular expression functions.
   <license>GPL</license>
 
   <release>
-    <version>0.1</version>
-    <date>2004-05-25</date>
-    <state>beta</state>
+    <version>1.0</version>
+    <date>2007-05-13</date>
+    <state>stable</state>
     <notes>
-     First working release
+     First sable release
     </notes>
   </release>
 
