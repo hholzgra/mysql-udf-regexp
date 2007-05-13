@@ -34,7 +34,12 @@
 	#include <regex/my_regex.h>
 	
 	// helper function borrowed from PHP, slightly modified
-	static char *my_regex_replace(const char *pattern, const char *replace, const char *string)
+	static char *my_regex_replace(const char *pattern, 
+								  const char *replace, 
+								  const char *string, 
+								  int position,
+								  int occurence, 
+								  int mode)
 	{
 		my_regex_t re;
 		my_regmatch_t *subs;
@@ -45,11 +50,12 @@
 		const char *walk; /* used to walk replacement string for backrefs */
 		int buf_len;
 		int pos, tmp, string_len, new_l;
-		int err, copts = REG_EXTENDED;
+		int err;
+		int match_no;
 	
 		string_len = strlen(string);
 	
-		err = my_regcomp(&re, pattern, copts, &my_charset_latin1);
+		err = my_regcomp(&re, pattern, mode, &my_charset_latin1);
 		if (err) {
 			return NULL;
 		}
@@ -62,10 +68,20 @@
 		buf_len = 2 * string_len + 1;
 		buf = calloc(buf_len, sizeof(char));
 	
-		err = pos = 0;
-		buf[0] = '\0';
+		err = 0;
+		match_no = 0;
+	
+		if (position) {
+			// obey request to skip string start
+			pos = position;
+			strncpy(buf, string, pos);
+		} else {
+			pos = 0;
+			buf[0] = '\0';
+		}
+	
 		while (!err) {
-			err = my_regexec(&re, &string[pos], re.re_nsub+1, subs, (pos ? REG_NOTBOL : 0));
+			err = my_regexec(&re, &string[pos], re.re_nsub+1, subs, mode | (pos ? REG_NOTBOL : 0));
 	
 			if (err && err != REG_NOMATCH) {
 				free(subs);
@@ -73,6 +89,22 @@
 				my_regfree(&re);
 				return NULL;
 			}
+	
+			match_no++;
+	
+			if ((occurence > 0)) {
+				if (match_no < occurence) {
+					// append pattern up to the match end 
+					// no need to recalculate the buffer size here 
+					// as no replaces have occured yet
+					strncat(buf, &string[pos], subs[0].rm_eo);
+					pos += subs[0].rm_eo;
+					continue;
+				} else if (match_no > occurence) {
+					err = REG_NOMATCH;
+				}
+			}
+	
 	
 			if (!err) {
 				/* backref replacement is done in two passes:
@@ -167,12 +199,12 @@
 		return (buf);
 	}
 	
-	static int parse_mode(const char *mode)
+	static int parse_mode(const char *mode, int len)
 	{
 		int flags = REG_EXTENDED | REG_NEWLINE;
 	
 		if (mode) {
-	  		do {
+			while (len-- > 0) {
 				switch (*mode++) {
 					case 'i': flags |=  REG_ICASE;   break; /* case insensitive */
 					case 'c': flags &= ~REG_ICASE;   break; /* case sensitive   */
@@ -181,10 +213,8 @@
 					case 'x':  break; /* ignore whitespace */
 					default: break;
 				}
-			} while (*mode != '\0');
+			}
 		}
-	
-		fprintf(stderr, "flags are %X\n", flags);
 	
 		return flags;
 	}

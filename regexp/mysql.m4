@@ -144,7 +144,6 @@ AC_DEFUN([MYSQL_SUBST], [
   AC_SUBST([MYSQL_LDFLAGS])
   AC_SUBST([MYSQL_LIBS])
   AC_SUBST([MYSQL_VERSION])
-  AC_SUBST([MYSQL_PLUGIN_DIR])
 ])
 
 
@@ -425,8 +424,6 @@ AC_DEFUN([MYSQL_USE_PLUGIN_API], [
 
   MYSQL_CXXFLAGS="$ADDFLAGS $MYSQL_CONFIG_INCLUDE $MYSQL_CXXFLAGS -DMYSQL_DYNAMIC_PLUGIN"
   MYSQL_CXXFLAGS="$MYSQL_CXXFLAGS -fno-implicit-templates -fno-exceptions -fno-rtti"    
-
-  MYSQL_PLUGIN_DIR=`$MYSQL_CLIENT -BNe "show variables like 'plugin_dir'" | sed -e "s/^plugin_dir\t//g"`
 
   MYSQL_DEBUG_SERVER()
 ])

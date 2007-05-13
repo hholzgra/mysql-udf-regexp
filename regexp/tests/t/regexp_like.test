@@ -7,6 +7,12 @@
 
 -- source create_functions.inc
 
+-- testing simple cases
+SELECT REGEXP_LIKE("xxxabcxxx", ".*abc.*") AS r1;
+SELECT REGEXP_LIKE("xxxabdxxx", ".*abc.*") AS r2;
+-- testing case sensitivity
+SELECT REGEXP_LIKE("xxxABCxxx", ".*abc.*") AS r3;
+SELECT REGEXP_LIKE("xxxABCxxx", ".*abc.*", "i") AS r4;
 -- testing POSIX character classes
 SELECT REGEXP_LIKE("abcdef",       "^[[:alpha:]]+$") AS r1;
 SELECT REGEXP_LIKE("123456",       "^[[:alpha:]]+$") AS r2;

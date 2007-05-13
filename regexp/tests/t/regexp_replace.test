@@ -7,9 +7,16 @@
 
 -- source create_functions.inc
 
+-- simple check
+SELECT REGEXP_REPLACE("lala foo lala", "foo", "bar") AS r1;
+-- multiple match check
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar") AS r2;
+-- position parameter check
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 1) AS r3;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 10) AS r4;
 -- occurence parameter check
-SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 0) AS r1;
-SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 1) AS r2;
-SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", 2) AS r2;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", NULL, 0) AS r5;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", NULL, 1) AS r6;
+SELECT REGEXP_REPLACE("lala foo lala foo lalala", "foo", "bar", NULL, 2) AS r7;
 
 -- source drop_functions.inc

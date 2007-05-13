@@ -198,14 +198,10 @@ DROP FUNCTION regexp_replace;
   <title>Signature</title>
   <methodsynopsis>
    <type>int</type><methodname>regexp_like</methodname>
-   <methodparam/><type>string</type><parameter>text</parameter</methodparam>
-   <methodparam/><type>string</type><parameter>pattern</parameter</methodparam>
-   <methodparam/><type>string</type><parameter>mode</parameter</methodparam>
+   <methodparam><type>string</type><parameter>text</parameter></methodparam>
+   <methodparam><type>string</type><parameter>pattern</parameter></methodparam>
+   <methodparam><type>string</type><parameter>mode</parameter></methodparam>
   </methodsynopsis>
-  <para>
-</para>
-<para>
-  </para>
  </refsect1>
  <refsect1>
   <title>Description</title>
@@ -225,16 +221,12 @@ DROP FUNCTION regexp_replace;
   <title>Signature</title>
   <methodsynopsis>
    <type>string</type><methodname>regexp_substr</methodname>
-   <methodparam/><type>string</type><parameter>text</parameter</methodparam>
-   <methodparam/><type>string</type><parameter>pattern</parameter</methodparam>
-   <methodparam choice='opt'/><type>int</type><parameter>position = 1</parameter</methodparam>
-   <methodparam choice='opt'/><type>int</type><parameter>occurence = 1</parameter</methodparam>
-   <methodparam choice='opt'/><type>string</type><parameter>mode = c</parameter</methodparam>
+   <methodparam><type>string</type><parameter>text</parameter></methodparam>
+   <methodparam><type>string</type><parameter>pattern</parameter></methodparam>
+   <methodparam choice='opt'><type>int</type><parameter>position = 1</parameter></methodparam>
+   <methodparam choice='opt'><type>int</type><parameter>occurence = 1</parameter></methodparam>
+   <methodparam choice='opt'><type>string</type><parameter>mode = c</parameter></methodparam>
   </methodsynopsis>
-  <para>
-</para>
-<para>
-  </para>
  </refsect1>
  <refsect1>
   <title>Description</title>
@@ -254,17 +246,13 @@ DROP FUNCTION regexp_replace;
   <title>Signature</title>
   <methodsynopsis>
    <type>int</type><methodname>regexp_instr</methodname>
-   <methodparam/><type>string</type><parameter>text</parameter</methodparam>
-   <methodparam/><type>string</type><parameter>pattern</parameter</methodparam>
-   <methodparam choice='opt'/><type>int</type><parameter>position = 1</parameter</methodparam>
-   <methodparam choice='opt'/><type>int</type><parameter>occurrence = 1</parameter</methodparam>
-   <methodparam choice='opt'/><type>int</type><parameter>return_end = 0</parameter</methodparam>
-   <methodparam choice='opt'/><type>string</type><parameter>mode = c</parameter</methodparam>
+   <methodparam><type>string</type><parameter>text</parameter></methodparam>
+   <methodparam><type>string</type><parameter>pattern</parameter></methodparam>
+   <methodparam choice='opt'><type>int</type><parameter>position = 1</parameter></methodparam>
+   <methodparam choice='opt'><type>int</type><parameter>occurrence = 1</parameter></methodparam>
+   <methodparam choice='opt'><type>int</type><parameter>return_end = 0</parameter></methodparam>
+   <methodparam choice='opt'><type>string</type><parameter>mode = c</parameter></methodparam>
   </methodsynopsis>
-  <para>
-</para>
-<para>
-  </para>
  </refsect1>
  <refsect1>
   <title>Description</title>
@@ -284,17 +272,13 @@ DROP FUNCTION regexp_replace;
   <title>Signature</title>
   <methodsynopsis>
    <type>string</type><methodname>regexp_replace</methodname>
-   <methodparam/><type>string</type><parameter>text</parameter</methodparam>
-   <methodparam/><type>string</type><parameter>pattern</parameter</methodparam>
-   <methodparam/><type>string</type><parameter>replace</parameter</methodparam>
-   <methodparam choice='opt'/><type>int</type><parameter>position = 1</parameter</methodparam>
-   <methodparam choice='opt'/><type>int</type><parameter>occurence = 1</parameter</methodparam>
-   <methodparam choice='opt'/><type>string</type><parameter>mode = c</parameter</methodparam>
+   <methodparam><type>string</type><parameter>text</parameter></methodparam>
+   <methodparam><type>string</type><parameter>pattern</parameter></methodparam>
+   <methodparam><type>string</type><parameter>replace</parameter></methodparam>
+   <methodparam choice='opt'><type>int</type><parameter>position = 1</parameter></methodparam>
+   <methodparam choice='opt'><type>int</type><parameter>occurence = 0</parameter></methodparam>
+   <methodparam choice='opt'><type>string</type><parameter>mode = c</parameter></methodparam>
   </methodsynopsis>
-  <para>
-</para>
-<para>
-  </para>
  </refsect1>
  <refsect1>
   <title>Description</title>

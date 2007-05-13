@@ -7,6 +7,20 @@
 
 -- source create_functions.inc
 
+-- checking simple case
+SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+") AS r1;
+-- checking position offsets
+SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+", 5) AS r2;
+SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+", 6) AS r3;
+SELECT REGEXP_SUBSTR("abc 123 def", "[[:digit:]]+", 10) AS r4;
+-- checking occurence
+SELECT REGEXP_SUBSTR("abc 123 def 456 ghi", "[[:digit:]]+", 1, 1) AS r5;
+SELECT REGEXP_SUBSTR("abc 123 def 456 ghi", "[[:digit:]]+", 1, 2) AS r6;
+-- checking the 'i' flag
+SELECT REGEXP_SUBSTR("xxx abc xxx", "abc", 1, 1, 'i') AS r7;
+SELECT REGEXP_SUBSTR("xxx ABC xxx", "abc", 1, 1, 'i') AS r8;
+SELECT REGEXP_SUBSTR("xxx abc xxx", "ABC", 1, 1, 'i') AS r9;
+SELECT REGEXP_SUBSTR("xxx ABC xxx", "ABC", 1, 1, 'i') AS r10;
 -- checking the 'c' flag
 SELECT REGEXP_SUBSTR("xxx abc xxx", "abc", 1, 1, 'c') AS r11;
 SELECT REGEXP_SUBSTR("xxx ABC xxx", "abc", 1, 1, 'c') AS r12;

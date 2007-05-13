@@ -157,7 +157,7 @@ my_bool regexp_like_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 			// we have to make sure we have a NUL terminated C string
 			// as argument for my_regcomp           
 			copy = strndup(pattern, pattern_len);
-			stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+			stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
 			free(copy);
 
 			if (stat) {
@@ -225,7 +225,7 @@ long long regexp_like(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *err
 		
 		if (data->dynamic) {
 			copy = strndup(pattern, pattern_len);
-			stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+			stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
 			free(copy);
 			if (stat) {
 				// TODO: need ERROR() and WARNING() macro
@@ -330,7 +330,7 @@ my_bool regexp_substr_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 			// we have to make sure we have a NUL terminated C string
 			// as argument for my_regcomp           
 			copy = strndup(pattern, pattern_len);
-			stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+			stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
 			free(copy);
 
 			if (stat) {
@@ -421,7 +421,7 @@ char * regexp_substr(UDF_INIT *initid, UDF_ARGS *args, char *result, unsigned lo
 
 		if (data->dynamic) {
 			copy = strndup(pattern, pattern_len);
-			stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+			stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
 			free(copy);
 			if (stat) {
 				// TODO: need ERROR() and WARNING() macro
@@ -432,7 +432,6 @@ char * regexp_substr(UDF_INIT *initid, UDF_ARGS *args, char *result, unsigned lo
 		copy = strndup(text, text_len);
 
 		while (occurence > 0) {
-			fprintf(stderr, "occ %d, pos %d, text '%s'\n", (int)occurence, (int)position, text);
 			stat = my_regexec(&data->expr, copy + position, 1, &match, 0);
 			if (stat) {
 				break;
@@ -541,7 +540,7 @@ my_bool regexp_instr_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 			// we have to make sure we have a NUL terminated C string
 			// as argument for my_regcomp           
 			copy = strndup(pattern, pattern_len);
-			stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+			stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
 			free(copy);
 
 			if (stat) {
@@ -634,7 +633,7 @@ long long regexp_instr(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *er
  
 		if (data->dynamic) {
 			copy = strndup(pattern, pattern_len);
-			stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+			stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
 			free(copy);
 			if (stat) {
 				// TODO: need ERROR() and WARNING() macro
@@ -689,7 +688,7 @@ my_bool regexp_replace_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
     int replace_is_null = 1;
     long long position = 1;
     int position_is_null = 0;
-    long long occurence = 1;
+    long long occurence = 0;
     int occurence_is_null = 0;
     char *mode = "c";
     long long mode_len = 1;
@@ -772,7 +771,7 @@ char * regexp_replace(UDF_INIT *initid, UDF_ARGS *args, char *result, unsigned l
     int replace_is_null = 1;
     long long position = 1;
     int position_is_null = 0;
-    long long occurence = 1;
+    long long occurence = 0;
     int occurence_is_null = 0;
     char *mode = "c";
     long long mode_len = 1;
@@ -805,26 +804,26 @@ char * regexp_replace(UDF_INIT *initid, UDF_ARGS *args, char *result, unsigned l
 		char *result;
 
 		if (position) {
-		  position -= 1; /* oracle offsets start at 1, not 0 */
-		  if (position >= text_len) {
-			  RETURN_NULL;
-		  }
+			position -= 1; /* oracle offsets start at 1, not 0 */
+			if (position >= text_len) {
+				RETURN_NULL;
+			}
 		}
 
 		c_pattern = strndup(pattern, pattern_len);
 		c_replace = strndup(replace, replace_len);
-		c_text    = strndup(text,    text_len);
+		c_text    = strndup(text, text_len);
 
-		result = my_regex_replace(c_pattern, c_replace, c_text);
+		result = my_regex_replace(c_pattern, c_replace, c_text, position, occurence, parse_mode(mode, mode_len));
 
 		free(c_pattern);
 		free(c_replace);
 		free(c_text);
 
 		if (result) {
-		  RETURN_STRING(result);
+			RETURN_STRING(result);
 		} else {
-		  RETURN_NULL;
+			RETURN_NULL;
 		}
 	} while (0);
 }

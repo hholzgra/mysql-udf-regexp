@@ -10,6 +10,6 @@ provided by the Oracle regular expression functions.
 See the INSTALL file for installation instruction
 
 -- 
-This UDF extension was created using CodeGen_Mysql_UDF 0.9.7dev
+This UDF extension was created using CodeGen_Mysql_UDF 0.9.8
 
 http://codegenerators.php-baustelle.de/trac/wiki/CodeGen_MySQL_UDF\N

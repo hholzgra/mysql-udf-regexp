@@ -7,6 +7,17 @@
 
 -- source create_functions.inc
 
+-- simple match
+SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox") AS r1;
+-- checking position parameter
+SELECT REGEXP_INSTR("lala abc lala abc lala", "abc")    AS r1;
+SELECT REGEXP_INSTR("lala abc lala abc lala", "abc", 6) AS r2;
+SELECT REGEXP_INSTR("lala abc lala abc lala", "abc", 7) AS r3;
+-- checking occurence parameter
+SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 1) AS r1;
+SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 2) AS r2;
+SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 3) AS r3;
+SELECT REGEXP_INSTR("lala abc lala abc lala abc lala", "abc", 1, 4) AS r4;
 -- get character position of match start
 SELECT REGEXP_INSTR("the quick brown fox jumps ...", "fox", 1, 1, 0) AS r1;
 -- get character position of match end
