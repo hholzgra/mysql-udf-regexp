@@ -53,7 +53,7 @@ provided by the Oracle regular expression functions.
         // we have to make sure we have a NUL terminated C string
         // as argument for my_regcomp           
         copy = strndup(pattern, pattern_len);
-        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
         free(copy);
 
         if (stat) {
@@ -85,7 +85,7 @@ provided by the Oracle regular expression functions.
     
     if (data->dynamic) {
         copy = strndup(pattern, pattern_len);
-        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
         free(copy);
         if (stat) {
             // TODO: need ERROR() and WARNING() macro
@@ -178,7 +178,7 @@ r3
         // we have to make sure we have a NUL terminated C string
         // as argument for my_regcomp           
         copy = strndup(pattern, pattern_len);
-        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
         free(copy);
 
         if (stat) {
@@ -221,7 +221,7 @@ r3
 
     if (data->dynamic) {
         copy = strndup(pattern, pattern_len);
-        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
         free(copy);
         if (stat) {
             // TODO: need ERROR() and WARNING() macro
@@ -355,7 +355,7 @@ ABC
         // we have to make sure we have a NUL terminated C string
         // as argument for my_regcomp           
         copy = strndup(pattern, pattern_len);
-        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
         free(copy);
 
         if (stat) {
@@ -394,7 +394,7 @@ ABC
  
     if (data->dynamic) {
         copy = strndup(pattern, pattern_len);
-        stat  = my_regcomp(&data->expr, copy, parse_mode(mode), &my_charset_latin1);
+        stat  = my_regcomp(&data->expr, copy, parse_mode(mode, mode_len), &my_charset_latin1);
         free(copy);
         if (stat) {
             // TODO: need ERROR() and WARNING() macro
@@ -704,24 +704,22 @@ static char *my_regex_replace(const char *pattern, const char *replace, const ch
     return (buf);
 }
 
-static int parse_mode(const char *mode)
+static int parse_mode(const char *mode, int len)
 {
 	int flags = REG_EXTENDED | REG_NEWLINE;
 
 	if (mode) {
-  		do {
+		while (len-- > 0) {
 			switch (*mode++) {
-				case 'i': flags |=  REG_ICASE;   break; /* case insensitive */
-				case 'c': flags &= ~REG_ICASE;   break; /* case sensitive   */
+				case 'i': flags |=	REG_ICASE;	 break; /* case insensitive */
+				case 'c': flags &= ~REG_ICASE;	 break; /* case sensitive	*/
 				case 'n':  break; /* . matches newline */
 				case 'm':  break; /* multiple lines    */
 				case 'x':  break; /* ignore whitespace */
 				default: break;
 			}
-		} while (*mode != '\0');
+		}
 	}
-
-	fprintf(stderr, "flags are %X\n", flags);
 
 	return flags;
 }
