@@ -20645,7 +20645,7 @@ s/^[^=]*=[	 ]*$//;
 }'
 fi
 
-DEFS=-DHAVE_CONFIG_H
+DEFS="-DDBUG_OFF -DHAVE_CONFIG_H"
 
 ac_libobjs=
 ac_ltlibobjs=
