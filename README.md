@@ -1,7 +1,7 @@
 mysql-udf-regexp
 ================
 
-This package impelemnts regular expression functions as MySQL User Defined Functions (UDFs).
+This package implements regular expression functions as MySQL User Defined Functions (UDFs).
 
 The functions implemented by this package are:
 
